@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "YouTube Audio",
+    "version": "1.0.0",
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": [ "https://www.youtube.com/*" ],
+        "js": [ "content.js" ],
+        "run_at": "document_start"
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "matches": [ "https://www.youtube.com/*" ],
+        "resources": [ "injected.js" ]
+      }
+    ],
+    "permissions": [ "storage", "tabs" ],
+    "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"]
+}

@@ -1,0 +1,26 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "tts-dll",
+            "command": "cl.exe",
+            "args": [
+                "/Zi",
+                "/EHsc",
+                "/utf-8",
+                "/LD",
+                "/Fe${fileDirname}\\out\\tts.dll",
+                "/Fo${fileDirname}\\out\\tts.obj",
+                "/Fd${fileDirname}\\out\\tts.pdb",
+                "${fileDirname}\\tts.cpp",
+                "/link",
+                "Ole32.lib",
+                "Sapi.lib"
+            ],
+            "group": {
+                "isDefault": true
+            }
+        }
+    ],
+    "version": "2.0.0"
+}
