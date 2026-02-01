@@ -13,6 +13,8 @@ import (
 var (
 	port int = 13520
 
+	baseRate float64 = 1.5
+
 	subtitles     []Subtitle = make([]Subtitle, 0)
 	channel       chan int64 = make(chan int64, 1024)
 	subtitleIndex int        = 0
@@ -61,7 +63,7 @@ func main() {
 
 		if x < -1000 {
 			adjustTime = true // 暂停播放
-			fmt.Printf("\n倒退: %s\n", timeToString(x))
+			fmt.Printf("\n倒退: %s\n", timeToString(-x))
 			for subtitleIndex < len(subtitles) && subtitleIndex > 0 {
 				//处理倒退的情况
 				subtitle := subtitles[subtitleIndex]
@@ -103,17 +105,23 @@ func main() {
 		isSpeaking = true
 
 		go func() {
+			defer func() { isSpeaking = false }()
+
 			text := ""
-			speakRate := 1.0
-			for {
+			speakRate := baseRate
+			for i := 0; ; i++ {
+				if subtitleIndex >= len(subtitles) {
+					break
+				}
+
 				// 拼接多个字幕
 				subtitle := subtitles[subtitleIndex]
 				if subtitle.StartMs < time {
 					text += subtitle.Text
 					subtitleIndex++
-
-					// 如果语速小于5，则增加语速
-					speakRate += 1
+					if i >= 1 {
+						speakRate += 0.5
+					}
 				} else {
 					break
 				}
@@ -122,8 +130,6 @@ func main() {
 			if text != "" {
 				speakText(speakRate, text) // 播放字幕
 			}
-
-			isSpeaking = false
 		}()
 	}
 	releaseTTS() // 释放TTS
@@ -161,7 +167,7 @@ func StartServer() {
 	})
 
 	fmt.Printf("启动服务器: http://localhost:%d\n", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	http.ListenAndServe(fmt.Sprintf("localhost:%d", port), nil)
 }
 
 func timeToString(time int64) string {
