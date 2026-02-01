@@ -1,11 +1,19 @@
 package main
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
+
+var (
+	replaceRegex = regexp.MustCompile(`\[[^\]]*\]`)
+)
 
 type Subtitle struct {
 	StartMs    int64  `json:"start_ms"`
 	DurationMs int64  `json:"duration_ms"`
 	Text       string `json:"text"`
+	IsDone     bool   `json:"is_done"`
 }
 
 type YoutubeSubtitle struct {
@@ -31,17 +39,36 @@ func (s *YoutubeSubtitle) ToSubtitle() []Subtitle {
 		}
 
 		text = strings.ReplaceAll(text, "\n", "")
-		text = strings.ReplaceAll(text, "[音乐]", "")
+		text = replaceRegex.ReplaceAllString(text, "")
 
 		if strings.TrimSpace(text) == "" {
 			continue
 		}
 
-		subtitles = append(subtitles, Subtitle{
-			StartMs:    event.StartMs,
-			DurationMs: event.DurationMs,
-			Text:       text,
-		})
+		startMs := event.StartMs
+		// 按照句号分割文本
+		sentences := strings.Split(text, "。")
+		for j, sentence := range sentences {
+			// 计算这个句子占整个时间的比例
+			durationMs := event.DurationMs * int64(len(sentence)) / int64(len(text))
+
+			// 如果当前是第一个句子，并且前一个句子没有完成，则拼接到前一个句子的文本后面
+			i := len(subtitles)
+			if i > 0 && j == 0 && !subtitles[i-1].IsDone {
+				subtitles[i-1].Text += sentence
+				subtitles[i-1].DurationMs += durationMs
+				startMs += durationMs
+			} else {
+				// 否则创建一个新的子标题
+				subtitles = append(subtitles, Subtitle{
+					StartMs:    startMs,
+					DurationMs: durationMs,
+					Text:       sentence,
+					IsDone:     false,
+				})
+				startMs += durationMs
+			}
+		}
 	}
 	return subtitles
 }
